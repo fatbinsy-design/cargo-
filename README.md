@@ -166,6 +166,41 @@ git push -u origin main
 ```
 
 3. Aller dans l'onglet **Actions** du depot GitHub pour voir l'execution du pipeline.
-# cargo-
-# cargo-
-# cargo-
+
+## CD - Deploiement automatique
+
+Le meme workflow contient aussi un job `deploy`.
+
+Le deploiement se lance uniquement si :
+
+- le push est fait sur la branche `main`
+- la CI est terminee avec succes
+- le secret GitHub `DEPLOY_WEBHOOK_URL` est configure
+
+### Configuration du secret
+
+Dans le depot GitHub :
+
+1. Aller dans **Settings**.
+2. Aller dans **Secrets and variables**.
+3. Cliquer sur **Actions**.
+4. Cliquer sur **New repository secret**.
+5. Ajouter :
+
+```text
+Name: DEPLOY_WEBHOOK_URL
+Value: l'URL du webhook de deploiement
+```
+
+Exemple avec Render :
+
+```text
+DEPLOY_WEBHOOK_URL=https://api.render.com/deploy/srv-xxxx?key=xxxx
+```
+
+Ensuite, a chaque push sur `main`, GitHub Actions va :
+
+1. executer la CI
+2. verifier que l'API fonctionne
+3. appeler le webhook
+4. declencher le deploiement automatiquement

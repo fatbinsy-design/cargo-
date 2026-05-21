@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cargaison {
+  id                  Int      @id @default(autoincrement())
+  numero              String
+  date_expedition     DateTime
+  date_arrivee_prevue DateTime
+  statut              String
+  origine             Json
+  destination         Json
+  transporteur        Json
+  marchandises        Json
+  poids_total         Int
+  valeur_totale       Int
+  devise              String
+}
+
+model Transporteur {
+  id              Int      @id @default(autoincrement())
+  nom             String
+  adresse         String
+  telephone       String
+  email           String
+  numero_licence  String
+  specialites     String[]
+  zones_couvertes String[]
+}
+
+model Ville {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  region      String
+  population  Int
+  coordonnees Json
+  ports       String[]
+  aeroports   String[]
+}
+
+model TypeMarchandise {
+  id              Int    @id @default(autoincrement())
+  nom             String
+  categorie       String
+  unite_standard  String
+  prix_moyen      Int
+  devise          String
+}
+
+model Statut {
+  id          Int    @id @default(autoincrement())
+  code        String @unique
+  libelle     String
+  description String
+}
+
+model Admin {
+  id                  Int      @id @default(autoincrement())
+  nom                 String
+  prenom              String
+  email               String   @unique
+  username            String   @unique
+  password            String
+  role                String
+  telephone           String
+  date_creation       DateTime
+  derniere_connexion  DateTime
+  actif               Boolean
+  permissions         String[]
+}
+
+model Session {
+  id              Int      @id @default(autoincrement())
+  admin_id        Int
+  token           String
+  date_creation   DateTime
+  date_expiration DateTime
+  ip_address      String
+  user_agent      String
+  actif           Boolean
+}
+
+model LogConnexion {
+  id              Int      @id @default(autoincrement())
+  admin_id        Int?
+  username        String
+  date_connexion  DateTime
+  ip_address      String
+  user_agent      String
+  statut          String
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  nom         String   @unique
+  libelle     String
+  description String
+  permissions String[]
+}

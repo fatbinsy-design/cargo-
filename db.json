@@ -1,0 +1,534 @@
+{
+  "cargaisons": [
+    {
+      "id": 1,
+      "numero": "CAR-SN-2025-001",
+      "date_expedition": "2025-08-01",
+      "date_arrivee_prevue": "2025-08-15",
+      "statut": "en_transit",
+      "origine": {
+        "ville": "Dakar",
+        "port": "Port Autonome de Dakar",
+        "pays": "Sénégal"
+      },
+      "destination": {
+        "ville": "Touba",
+        "adresse": "Marché Central de Touba",
+        "pays": "Sénégal"
+      },
+      "transporteur": {
+        "nom": "Transport Mouride Express",
+        "telephone": "+221 77 123 45 67",
+        "email": "contact@mouride-express.sn"
+      },
+      "marchandises": [
+        {
+          "type": "Riz",
+          "quantite": 500,
+          "unite": "sacs de 50kg",
+          "valeur": 12500000,
+          "devise": "FCFA"
+        },
+        {
+          "type": "Huile végétale",
+          "quantite": 200,
+          "unite": "bidons de 20L",
+          "valeur": 8000000,
+          "devise": "FCFA"
+        }
+      ],
+      "poids_total": 29000,
+      "valeur_totale": 20500000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 2,
+      "numero": "CAR-SN-2025-002",
+      "date_expedition": "2025-08-05",
+      "date_arrivee_prevue": "2025-08-12",
+      "statut": "livre",
+      "origine": {
+        "ville": "Saint-Louis",
+        "port": "Port de Saint-Louis",
+        "pays": "Sénégal"
+      },
+      "destination": {
+        "ville": "Kaolack",
+        "adresse": "Marché de Kaolack",
+        "pays": "Sénégal"
+      },
+      "transporteur": {
+        "nom": "Saloum Transport",
+        "telephone": "+221 76 987 65 43",
+        "email": "info@saloum-transport.sn"
+      },
+      "marchandises": [
+        {
+          "type": "Arachides",
+          "quantite": 1000,
+          "unite": "sacs de 100kg",
+          "valeur": 45000000,
+          "devise": "FCFA"
+        },
+        {
+          "type": "Mil",
+          "quantite": 300,
+          "unite": "sacs de 50kg",
+          "valeur": 9000000,
+          "devise": "FCFA"
+        }
+      ],
+      "poids_total": 115000,
+      "valeur_totale": 54000000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 3,
+      "numero": "CAR-SN-2025-003",
+      "date_expedition": "2025-08-10",
+      "date_arrivee_prevue": "2025-08-18",
+      "statut": "en_preparation",
+      "origine": {
+        "ville": "Ziguinchor",
+        "port": "Port de Ziguinchor",
+        "pays": "Sénégal"
+      },
+      "destination": {
+        "ville": "Tambacounda",
+        "adresse": "Gare routière de Tambacounda",
+        "pays": "Sénégal"
+      },
+      "transporteur": {
+        "nom": "Casamance Cargo",
+        "telephone": "+221 78 456 12 89",
+        "email": "cargo@casamance.sn"
+      },
+      "marchandises": [
+        {
+          "type": "Mangues",
+          "quantite": 150,
+          "unite": "caisses de 20kg",
+          "valeur": 1800000,
+          "devise": "FCFA"
+        },
+        {
+          "type": "Noix de cajou",
+          "quantite": 80,
+          "unite": "sacs de 25kg",
+          "valeur": 4800000,
+          "devise": "FCFA"
+        }
+      ],
+      "poids_total": 5000,
+      "valeur_totale": 6600000,
+      "devise": "FCFA"
+    }
+  ],
+  "transporteurs": [
+    {
+      "id": 1,
+      "nom": "Transport Mouride Express",
+      "adresse": "Avenue Cheikh Ahmadou Bamba, Touba",
+      "telephone": "+221 77 123 45 67",
+      "email": "contact@mouride-express.sn",
+      "numero_licence": "TRS-SN-001",
+      "specialites": [
+        "Produits alimentaires",
+        "Marchandises générales"
+      ],
+      "zones_couvertes": [
+        "Dakar",
+        "Touba",
+        "Thiès",
+        "Kaolack"
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Saloum Transport",
+      "adresse": "Rue du Commerce, Kaolack",
+      "telephone": "+221 76 987 65 43",
+      "email": "info@saloum-transport.sn",
+      "numero_licence": "TRS-SN-002",
+      "specialites": [
+        "Produits agricoles",
+        "Céréales"
+      ],
+      "zones_couvertes": [
+        "Saint-Louis",
+        "Kaolack",
+        "Fatick",
+        "Diourbel"
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Casamance Cargo",
+      "adresse": "Boulevard de l'Indépendance, Ziguinchor",
+      "telephone": "+221 78 456 12 89",
+      "email": "cargo@casamance.sn",
+      "numero_licence": "TRS-SN-003",
+      "specialites": [
+        "Fruits et légumes",
+        "Produits frais"
+      ],
+      "zones_couvertes": [
+        "Ziguinchor",
+        "Kolda",
+        "Sédhiou",
+        "Tambacounda"
+      ]
+    },
+    {
+      "nom": "Transport Test",
+      "adresse": "Rue Test, Ville Test",
+      "telephone": "+221 77 999 99 99",
+      "email": "test@transporttest.sn",
+      "numero_licence": "TRS-SN-580",
+      "specialites": [
+        "Test",
+        "Démonstration"
+      ],
+      "zones_couvertes": [
+        "Dakar",
+        "Thiès"
+      ],
+      "id": 4
+    }
+  ],
+  "villes": [
+    {
+      "id": 1,
+      "nom": "Dakar",
+      "region": "Dakar",
+      "population": 1146053,
+      "coordonnees": {
+        "latitude": 14.6928,
+        "longitude": -17.4467
+      },
+      "ports": [
+        "Port Autonome de Dakar"
+      ],
+      "aeroports": [
+        "Aéroport Blaise Diagne"
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Touba",
+      "region": "Diourbel",
+      "population": 529176,
+      "coordonnees": {
+        "latitude": 14.85,
+        "longitude": -15.88
+      },
+      "ports": [],
+      "aeroports": []
+    },
+    {
+      "id": 3,
+      "nom": "Saint-Louis",
+      "region": "Saint-Louis",
+      "population": 176000,
+      "coordonnees": {
+        "latitude": 16.0165,
+        "longitude": -16.4892
+      },
+      "ports": [
+        "Port de Saint-Louis"
+      ],
+      "aeroports": [
+        "Aéroport de Saint-Louis"
+      ]
+    },
+    {
+      "id": 4,
+      "nom": "Kaolack",
+      "region": "Kaolack",
+      "population": 172305,
+      "coordonnees": {
+        "latitude": 14.1667,
+        "longitude": -16.0667
+      },
+      "ports": [
+        "Port fluvial de Kaolack"
+      ],
+      "aeroports": []
+    },
+    {
+      "id": 5,
+      "nom": "Ziguinchor",
+      "region": "Ziguinchor",
+      "population": 158701,
+      "coordonnees": {
+        "latitude": 12.5683,
+        "longitude": -16.2739
+      },
+      "ports": [
+        "Port de Ziguinchor"
+      ],
+      "aeroports": [
+        "Aéroport de Ziguinchor"
+      ]
+    },
+    {
+      "id": 6,
+      "nom": "Tambacounda",
+      "region": "Tambacounda",
+      "population": 78800,
+      "coordonnees": {
+        "latitude": 13.7667,
+        "longitude": -13.6667
+      },
+      "ports": [],
+      "aeroports": []
+    }
+  ],
+  "types_marchandises": [
+    {
+      "id": 1,
+      "nom": "Riz",
+      "categorie": "Céréales",
+      "unite_standard": "sac de 50kg",
+      "prix_moyen": 25000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 2,
+      "nom": "Arachides",
+      "categorie": "Oléagineux",
+      "unite_standard": "sac de 100kg",
+      "prix_moyen": 45000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 3,
+      "nom": "Mil",
+      "categorie": "Céréales",
+      "unite_standard": "sac de 50kg",
+      "prix_moyen": 30000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 4,
+      "nom": "Huile végétale",
+      "categorie": "Huiles",
+      "unite_standard": "bidon de 20L",
+      "prix_moyen": 40000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 5,
+      "nom": "Mangues",
+      "categorie": "Fruits",
+      "unite_standard": "caisse de 20kg",
+      "prix_moyen": 12000,
+      "devise": "FCFA"
+    },
+    {
+      "id": 6,
+      "nom": "Noix de cajou",
+      "categorie": "Fruits secs",
+      "unite_standard": "sac de 25kg",
+      "prix_moyen": 60000,
+      "devise": "FCFA"
+    }
+  ],
+  "statuts": [
+    {
+      "id": 1,
+      "code": "en_preparation",
+      "libelle": "En préparation",
+      "description": "La cargaison est en cours de préparation"
+    },
+    {
+      "id": 2,
+      "code": "en_transit",
+      "libelle": "En transit",
+      "description": "La cargaison est en cours de transport"
+    },
+    {
+      "id": 3,
+      "code": "livre",
+      "libelle": "Livrée",
+      "description": "La cargaison a été livrée à destination"
+    },
+    {
+      "id": 4,
+      "code": "retarde",
+      "libelle": "Retardée",
+      "description": "La livraison de la cargaison est retardée"
+    },
+    {
+      "id": 5,
+      "code": "annule",
+      "libelle": "Annulée",
+      "description": "Le transport de la cargaison a été annulé"
+    }
+  ],
+  "admins": [
+    {
+      "id": 1,
+      "nom": "Mamadou Diallo",
+      "prenom": "Mamadou",
+      "email": "admin@cargaison-senegal.sn",
+      "username": "admin",
+      "password": "admin123",
+      "role": "super_admin",
+      "telephone": "+221 77 000 00 01",
+      "date_creation": "2025-01-01",
+      "derniere_connexion": "2025-08-11T10:30:00Z",
+      "actif": true,
+      "permissions": [
+        "gestion_cargaisons",
+        "gestion_transporteurs",
+        "gestion_utilisateurs",
+        "consultation_rapports",
+        "configuration_systeme"
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Fatou Seck",
+      "prenom": "Fatou",
+      "email": "fatou.seck@cargaison-senegal.sn",
+      "username": "fseck",
+      "password": "fatou2025",
+      "role": "admin",
+      "telephone": "+221 76 111 22 33",
+      "date_creation": "2025-02-15",
+      "derniere_connexion": "2025-08-10T16:45:00Z",
+      "actif": true,
+      "permissions": [
+        "gestion_cargaisons",
+        "gestion_transporteurs",
+        "consultation_rapports"
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Ousmane Ba",
+      "prenom": "Ousmane",
+      "email": "ousmane.ba@cargaison-senegal.sn",
+      "username": "oba",
+      "password": "ousmane456",
+      "role": "operateur",
+      "telephone": "+221 78 333 44 55",
+      "date_creation": "2025-03-20",
+      "derniere_connexion": "2025-08-11T08:15:00Z",
+      "actif": true,
+      "permissions": [
+        "gestion_cargaisons",
+        "consultation_rapports"
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1,
+      "admin_id": 1,
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+      "date_creation": "2025-08-11T10:30:00Z",
+      "date_expiration": "2025-08-11T22:30:00Z",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (Linux; Ubuntu)",
+      "actif": true
+    },
+    {
+      "admin_id": 1,
+      "token": "session_1754916786601_0i8mpp1ec",
+      "date_creation": "2025-08-11T12:53:06.601Z",
+      "date_expiration": "2025-08-12T00:53:06.601Z",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "actif": true,
+      "id": 2
+    }
+  ],
+  "logs_connexion": [
+    {
+      "id": 1,
+      "admin_id": 1,
+      "username": "admin",
+      "date_connexion": "2025-08-11T10:30:00Z",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (Linux; Ubuntu)",
+      "statut": "succès"
+    },
+    {
+      "id": 2,
+      "admin_id": 2,
+      "username": "fseck",
+      "date_connexion": "2025-08-10T16:45:00Z",
+      "ip_address": "192.168.1.101",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0)",
+      "statut": "succès"
+    },
+    {
+      "id": 3,
+      "admin_id": null,
+      "username": "test",
+      "date_connexion": "2025-08-09T14:20:00Z",
+      "ip_address": "192.168.1.102",
+      "user_agent": "Mozilla/5.0 (Android)",
+      "statut": "échec"
+    },
+    {
+      "admin_id": 1,
+      "username": "admin",
+      "date_connexion": "2025-08-11T12:53:06.635Z",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "statut": "succès",
+      "id": 4
+    }
+  ],
+  "roles": [
+    {
+      "id": 1,
+      "nom": "super_admin",
+      "libelle": "Super Administrateur",
+      "description": "Accès complet à toutes les fonctionnalités du système",
+      "permissions": [
+        "gestion_cargaisons",
+        "gestion_transporteurs",
+        "gestion_utilisateurs",
+        "consultation_rapports",
+        "configuration_systeme",
+        "sauvegarde_restauration",
+        "gestion_logs"
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "admin",
+      "libelle": "Administrateur",
+      "description": "Gestion des opérations courantes",
+      "permissions": [
+        "gestion_cargaisons",
+        "gestion_transporteurs",
+        "consultation_rapports",
+        "gestion_utilisateurs_limite"
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "operateur",
+      "libelle": "Opérateur",
+      "description": "Gestion des cargaisons et consultation des rapports",
+      "permissions": [
+        "gestion_cargaisons",
+        "consultation_rapports"
+      ]
+    },
+    {
+      "id": 4,
+      "nom": "lecteur",
+      "libelle": "Lecteur",
+      "description": "Consultation uniquement",
+      "permissions": [
+        "consultation_rapports"
+      ]
+    }
+  ]
+}

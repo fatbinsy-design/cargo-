@@ -1,0 +1,34 @@
+{
+  "name": "api-rest-cargaison-senegal",
+  "version": "1.0.0",
+  "description": "API REST Express, Prisma et PostgreSQL pour la gestion des cargaisons au Sénégal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "prisma:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "prisma": "^6.19.3"
+  },
+  "keywords": [
+    "express",
+    "prisma",
+    "postgresql",
+    "cargaison",
+    "senegal",
+    "api"
+  ],
+  "author": "Votre nom",
+  "license": "MIT"
+}

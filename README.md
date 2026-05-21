@@ -171,13 +171,13 @@ git push -u origin main
 
 Le meme workflow contient aussi un job `deploy`.
 
-Le deploiement se lance uniquement si :
+Le deploiement continu vers Docker Hub se lance uniquement si :
 
 - le push est fait sur la branche `main`
 - la CI est terminee avec succes
-- le secret GitHub `DEPLOY_WEBHOOK_URL` est configure
+- les secrets GitHub Docker Hub sont configures
 
-### Configuration du secret
+### Configuration des secrets Docker Hub
 
 Dans le depot GitHub :
 
@@ -188,19 +188,40 @@ Dans le depot GitHub :
 5. Ajouter :
 
 ```text
-Name: DEPLOY_WEBHOOK_URL
-Value: l'URL du webhook de deploiement
+Name: DOCKERHUB_USERNAME
+Value: votre nom d'utilisateur Docker Hub
 ```
-
-Exemple avec Render :
 
 ```text
-DEPLOY_WEBHOOK_URL=https://api.render.com/deploy/srv-xxxx?key=xxxx
+Name: DOCKERHUB_TOKEN
+Value: un token Docker Hub
 ```
+
+Pour creer le token Docker Hub :
+
+1. Aller sur Docker Hub.
+2. Aller dans **Account settings**.
+3. Aller dans **Personal access tokens**.
+4. Creer un token avec permission **Read & Write**.
 
 Ensuite, a chaque push sur `main`, GitHub Actions va :
 
 1. executer la CI
 2. verifier que l'API fonctionne
-3. appeler le webhook
-4. declencher le deploiement automatiquement
+3. construire l'image Docker
+4. pousser l'image sur Docker Hub
+
+L'image sera publiee avec deux tags :
+
+```text
+fatoumatbinetousylla/cargo_api:latest
+fatoumatbinetousylla/cargo_api:<sha-du-commit>
+```
+
+Pour lancer l'image localement :
+
+```bash
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://postgres:postgres@host.docker.internal:5432/cargaison_db?schema=public" \
+  fatoumatbinetousylla/cargo_api:latest
+```

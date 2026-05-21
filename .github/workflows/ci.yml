@@ -79,7 +79,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     env:
-      DOCKER_IMAGE: fatoumatbinetousylla/cargo_api
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/cargo_api
 
     steps:
       - name: Checkout repository

@@ -1,0 +1,35 @@
+name: Deploy Cargo API
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+            sudo docker pull fatoumatbinetousylla/cargo_api:latest
+
+            sudo docker stop cargo_api || true
+            sudo docker rm cargo_api || true
+
+            sudo docker run -d \
+              --name cargo_api \
+              -p 3000:3000 \
+              fatoumatbinetousylla/cargo_api:latest

@@ -1,0 +1,181 @@
+---
+- name: Deploy Cargo API on EC2
+  hosts: cargo_api
+  become: true
+
+  vars:
+    app_name: cargo-api
+    app_user: "{{ ansible_user | default('ubuntu') }}"
+    app_dir: /opt/cargo-api
+    app_port: "{{ lookup('env', 'APP_PORT') | default('3000', true) }}"
+    database_name: cargaison_db
+    postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') | default('postgres', true) }}"
+    database_url: "{{ lookup('env', 'DATABASE_URL') | default('postgresql://postgres:' ~ postgres_password ~ '@localhost:5432/' ~ database_name ~ '?schema=public', true) }}"
+    seed_database: "{{ lookup('env', 'SEED_DATABASE') | default('false', true) | bool }}"
+
+  handlers:
+    - name: restart cargo api
+      ansible.builtin.systemd:
+        name: "{{ app_name }}"
+        state: restarted
+        daemon_reload: true
+
+  tasks:
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - postgresql
+          - rsync
+        state: present
+        update_cache: true
+
+    - name: Add NodeSource Node.js 22 repository
+      ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Install Node.js
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: true
+
+    - name: Ensure PostgreSQL is running
+      ansible.builtin.systemd:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Set PostgreSQL postgres user password
+      become_user: postgres
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -v
+          - "postgres_password={{ postgres_password }}"
+          - -c
+          - "ALTER USER postgres WITH PASSWORD :'postgres_password';"
+      changed_when: false
+
+    - name: Check application database
+      become_user: postgres
+      ansible.builtin.command: psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ database_name }}'"
+      register: cargo_database
+      changed_when: false
+
+    - name: Create application database
+      become_user: postgres
+      ansible.builtin.command: createdb "{{ database_name }}"
+      when: cargo_database.stdout.strip() != "1"
+
+    - name: Ensure application directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0755"
+
+    - name: Synchronize application files
+      become: false
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: "{{ app_dir }}/"
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+          - "--exclude=.env"
+          - "--exclude=inventory.ini"
+          - "--exclude=private_key.pem"
+      notify: restart cargo api
+
+    - name: Write production environment
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0600"
+        content: |
+          NODE_ENV=production
+          PORT={{ app_port }}
+          DATABASE_URL={{ database_url }}
+      notify: restart cargo api
+
+    - name: Install Node.js dependencies
+      become_user: "{{ app_user }}"
+      ansible.builtin.command: npm ci --omit=dev
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        NODE_ENV: production
+
+    - name: Generate Prisma client
+      become_user: "{{ app_user }}"
+      ansible.builtin.command: npm run prisma:generate
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        DATABASE_URL: "{{ database_url }}"
+
+    - name: Push Prisma schema to database
+      become_user: "{{ app_user }}"
+      ansible.builtin.command: npm run db:push
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        DATABASE_URL: "{{ database_url }}"
+
+    - name: Seed database when explicitly requested
+      become_user: "{{ app_user }}"
+      ansible.builtin.command: npm run db:seed
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        DATABASE_URL: "{{ database_url }}"
+      when: seed_database
+
+    - name: Configure systemd service
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ app_name }}.service"
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Cargo API
+          After=network.target postgresql.service
+
+          [Service]
+          Type=simple
+          User={{ app_user }}
+          Group={{ app_user }}
+          WorkingDirectory={{ app_dir }}
+          EnvironmentFile={{ app_dir }}/.env
+          ExecStart=/usr/bin/npm start
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: restart cargo api
+
+    - name: Enable and start application service
+      ansible.builtin.systemd:
+        name: "{{ app_name }}"
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Apply pending service changes
+      ansible.builtin.meta: flush_handlers
+
+    - name: Wait for healthcheck
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}/health"
+        status_code: 200
+      register: healthcheck
+      retries: 15
+      delay: 2
+      until: healthcheck.status == 200

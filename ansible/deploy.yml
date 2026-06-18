@@ -24,6 +24,7 @@
     - name: Install base packages
       ansible.builtin.apt:
         name:
+          - acl
           - ca-certificates
           - curl
           - gnupg

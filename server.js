@@ -101,6 +101,77 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.get('/api/tasks', async (req, res) => {
+  try {
+    const tasks = await prisma.todo.findMany({
+      orderBy: [{ completed: 'asc' }, { created_at: 'desc' }],
+    });
+    res.json(tasks);
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const title = String(req.body.title || '').trim();
+
+    if (!title) {
+      return res.status(400).json({ message: 'Le titre est obligatoire' });
+    }
+
+    const task = await prisma.todo.create({
+      data: {
+        title,
+        completed: Boolean(req.body.completed),
+      },
+    });
+
+    return res.status(201).json(task);
+  } catch (error) {
+    return handleError(res, error);
+  }
+});
+
+app.patch('/api/tasks/:id', async (req, res) => {
+  try {
+    const data = {};
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'title')) {
+      const title = String(req.body.title || '').trim();
+      if (!title) {
+        return res.status(400).json({ message: 'Le titre est obligatoire' });
+      }
+      data.title = title;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'completed')) {
+      data.completed = Boolean(req.body.completed);
+    }
+
+    const task = await prisma.todo.update({
+      where: { id: Number(req.params.id) },
+      data,
+    });
+
+    return res.json(task);
+  } catch (error) {
+    return handleError(res, error);
+  }
+});
+
+app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    await prisma.todo.delete({
+      where: { id: Number(req.params.id) },
+    });
+
+    return res.status(204).send();
+  } catch (error) {
+    return handleError(res, error);
+  }
+});
+
 app.get('/docs', (req, res) => {
   res.type('html').send(swaggerHtml());
 });

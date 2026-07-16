@@ -2,6 +2,11 @@ node_modules
 .git
 .github
 .env
+ansible
+terraform
+frontend
+docs
+scripts
 npm-debug.log*
 Dockerfile
 README.md

@@ -1,4 +1,4 @@
-name: Deploy Cargo API
+name: Build and Deploy MediShop Todo
 
 on:
   push:
@@ -11,58 +11,159 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ANSIBLE_HOST_KEY_CHECKING: "False"
-      ANSIBLE_LOCAL_TEMP: /tmp/ansible-local
-      ANSIBLE_REMOTE_TEMP: /tmp/ansible-remote
       EC2_USER: ${{ secrets.EC2_USER || 'ubuntu' }}
       APP_PORT: ${{ vars.APP_PORT || '3000' }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+      FRONTEND_HOST_PORT: ${{ vars.FRONTEND_HOST_PORT || '8080' }}
+      DB_NAME: ${{ vars.DB_NAME || 'todo_db' }}
+      DB_USER: ${{ vars.DB_USER || 'postgres' }}
+      DB_PORT: ${{ vars.DB_PORT || '5432' }}
       SEED_DATABASE: ${{ vars.SEED_DATABASE || 'false' }}
+      BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/medishop-back
+      FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/medishop-front
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Check EC2 secrets
+      - name: Check required secrets
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          FRONT_HOST: ${{ secrets.FRONT_HOST }}
+          BACK_PRIVATE_IP: ${{ secrets.BACK_PRIVATE_IP }}
+          DB_PRIVATE_IP: ${{ secrets.DB_PRIVATE_IP }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          if [ -z "${{ secrets.EC2_HOST }}" ] || [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
-            echo "EC2_HOST or EC2_SSH_KEY is not configured."
-            echo "Add them in GitHub: Settings > Secrets and variables > Actions."
+          missing=0
+
+          for secret_name in DOCKERHUB_USERNAME DOCKERHUB_TOKEN EC2_SSH_KEY FRONT_HOST BACK_PRIVATE_IP DB_PRIVATE_IP POSTGRES_PASSWORD; do
+            value="${!secret_name:-}"
+
+            if [ -z "$value" ]; then
+              echo "$secret_name is not configured."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -eq 1 ]; then
             exit 1
           fi
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-
-      - name: Install Ansible and rsync
+      - name: Detect changed layers
+        id: changes
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install ansible
-          sudo apt-get update
-          sudo apt-get install -y rsync
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base_sha="${{ github.event.before }}"
+          if [ -z "$base_sha" ] || [[ "$base_sha" =~ ^0+$ ]]; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only "$base_sha" "$GITHUB_SHA" > changed-files.txt
+
+          if grep -Eq '^(server\.js|src/|prisma/|package(-lock)?\.json|Dockerfile|scripts/remote-deploy-backend\.sh)$' changed-files.txt; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if grep -Eq '^(frontend/|scripts/remote-deploy-frontend\.sh)$' changed-files.txt; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure SSH key
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
 
-      - name: Create Ansible inventory
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        if: steps.changes.outputs.backend == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+      - name: Build and push frontend image
+        if: steps.changes.outputs.frontend == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+      - name: Deploy backend through Front bastion
+        if: steps.changes.outputs.backend == 'true'
+        shell: bash
+        env:
+          FRONT_HOST: ${{ secrets.FRONT_HOST }}
+          BACK_PRIVATE_IP: ${{ secrets.BACK_PRIVATE_IP }}
+          DB_PRIVATE_IP: ${{ secrets.DB_PRIVATE_IP }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          IMAGE_NAME: ${{ env.BACKEND_IMAGE }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          cat > inventory.ini <<EOF
-          [cargo_api]
-          api ansible_host=${{ secrets.EC2_HOST }} ansible_user=${EC2_USER} ansible_ssh_private_key_file=$HOME/.ssh/ec2_key ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
-          EOF
+          set -euo pipefail
 
-      - name: Check Ansible syntax
-        run: ansible-playbook -i inventory.ini ansible/deploy.yml --syntax-check
+          database_url="postgresql://${DB_USER}:${POSTGRES_PASSWORD}@${DB_PRIVATE_IP}:${DB_PORT}/${DB_NAME}?schema=public"
+          remote_env="IMAGE_NAME=$(printf '%q' "$IMAGE_NAME") IMAGE_TAG=$(printf '%q' "$IMAGE_TAG") DATABASE_URL=$(printf '%q' "$database_url") APP_PORT=$(printf '%q' "$APP_PORT") SEED_DATABASE=$(printf '%q' "$SEED_DATABASE")"
 
-      - name: Check SSH connection
-        run: ansible cargo_api -i inventory.ini -m ping
+          ssh \
+            -i ~/.ssh/ec2_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -J "${EC2_USER}@${FRONT_HOST}" \
+            "${EC2_USER}@${BACK_PRIVATE_IP}" \
+            "$remote_env bash -s" < scripts/remote-deploy-backend.sh
 
-      - name: Deploy with Ansible
-        run: ansible-playbook -i inventory.ini ansible/deploy.yml
+      - name: Deploy frontend on Front
+        if: steps.changes.outputs.frontend == 'true'
+        shell: bash
+        env:
+          FRONT_HOST: ${{ secrets.FRONT_HOST }}
+          IMAGE_NAME: ${{ env.FRONTEND_IMAGE }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          remote_env="IMAGE_NAME=$(printf '%q' "$IMAGE_NAME") IMAGE_TAG=$(printf '%q' "$IMAGE_TAG") FRONTEND_HOST_PORT=$(printf '%q' "$FRONTEND_HOST_PORT")"
+
+          ssh \
+            -i ~/.ssh/ec2_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "${EC2_USER}@${FRONT_HOST}" \
+            "$remote_env bash -s" < scripts/remote-deploy-frontend.sh

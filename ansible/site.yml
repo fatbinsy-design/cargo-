@@ -1,0 +1,202 @@
+---
+- name: Install common container runtime
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - acl
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker keyring directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Install Docker apt key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Configure Docker apt repository
+      ansible.builtin.deb822_repository:
+        name: docker
+        types:
+          - deb
+        uris:
+          - https://download.docker.com/linux/ubuntu
+        suites:
+          - "{{ ansible_distribution_release }}"
+        components:
+          - stable
+        architectures:
+          - amd64
+        signed_by: /etc/apt/keyrings/docker.asc
+        state: present
+
+    - name: Install Docker Engine and Compose plugin
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+          - curl
+        state: present
+        update_cache: true
+
+    - name: Enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Allow SSH user to run Docker
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
+
+    - name: Create application root directory
+      ansible.builtin.file:
+        path: "{{ app_root }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+- name: Configure database instance
+  hosts: db
+  become: true
+
+  tasks:
+    - name: Create database compose directory
+      ansible.builtin.file:
+        path: "{{ app_root }}/db"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Write database compose file
+      ansible.builtin.template:
+        src: docker-compose.db.yml.j2
+        dest: "{{ app_root }}/db/docker-compose.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0640"
+
+    - name: Start PostgreSQL container
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: "{{ app_root }}/db"
+      register: db_compose
+      changed_when: "'Creating' in db_compose.stderr or 'Recreating' in db_compose.stderr or 'Started' in db_compose.stderr"
+
+- name: Configure backend instance
+  hosts: back
+  become: true
+
+  vars:
+    db_host: "{{ hostvars[groups['db'][0]].private_ip | default(hostvars[groups['db'][0]].ansible_host) }}"
+
+  tasks:
+    - name: Create backend directory
+      ansible.builtin.file:
+        path: "{{ app_root }}/backend"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Write backend environment file for manual runs
+      ansible.builtin.copy:
+        dest: "{{ app_root }}/backend/backend.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
+        content: |
+          NODE_ENV=production
+          PORT={{ backend_port }}
+          DATABASE_URL=postgresql://{{ db_user }}:{{ db_password }}@{{ db_host }}:{{ db_port }}/{{ db_name }}?schema=public
+
+- name: Configure front instance
+  hosts: front
+  become: true
+
+  vars:
+    back_host: "{{ hostvars[groups['back'][0]].private_ip | default(hostvars[groups['back'][0]].ansible_host) }}"
+
+  tasks:
+    - name: Install Nginx and Certbot
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: true
+
+    - name: Create frontend directory
+      ansible.builtin.file:
+        path: "{{ app_root }}/frontend"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Install Nginx reverse proxy configuration
+      ansible.builtin.template:
+        src: nginx-medishop.conf.j2
+        dest: /etc/nginx/sites-available/medishop.conf
+        mode: "0644"
+      notify: reload nginx
+
+    - name: Enable Nginx site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/medishop.conf
+        dest: /etc/nginx/sites-enabled/medishop.conf
+        state: link
+      notify: reload nginx
+
+    - name: Disable default Nginx site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: reload nginx
+
+    - name: Validate Nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Enable and start Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Configure Let's Encrypt certificate
+      ansible.builtin.command: "certbot --nginx --non-interactive --agree-tos --email {{ certbot_email }} -d {{ domain_name }} --redirect"
+      args:
+        creates: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+      when:
+        - enable_https
+        - domain_name | length > 1
+        - domain_name != "_"
+        - certbot_email | length > 3
+
+  handlers:
+    - name: reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded

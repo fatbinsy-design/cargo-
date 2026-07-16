@@ -129,99 +129,39 @@ npm run db:seed          # Insere les donnees initiales
 npm run studio           # Ouvre Prisma Studio
 ```
 
+## TP DevOps AWS
+
+Le depot contient maintenant un socle complet pour le TP MediShop :
+
+- `terraform/` provisionne la VPC, les sous-reseaux, les 3 instances EC2 et les Security Groups.
+- `ansible/site.yml` installe Docker, Nginx, Certbot et PostgreSQL selon le role de chaque instance.
+- `frontend/` contient une petite Todo App statique servie en conteneur Nginx.
+- `.github/workflows/deploy.yml` construit, pousse et deploie les images Front/Back sur `main`.
+- `scripts/remote-deploy-*.sh` gerent le premier deploiement et le rollback.
+
+Le guide de passage complet est dans [docs/tp-devops.md](docs/tp-devops.md).
+
 ## CI/CD avec GitHub Actions
 
-Le workflow CI est dans `.github/workflows/ci.yml`.
+Le workflow CI reste dans `.github/workflows/ci.yml` et verifie l'API avec PostgreSQL.
 
-Il se lance automatiquement sur :
-
-- `push` vers `main` ou `master`
-- `pull_request` vers `main` ou `master`
-
-Ce qu'il fait :
-
-1. Demarre une base PostgreSQL de test.
-2. Installe les dependances avec `npm ci`.
-3. Genere le client Prisma.
-4. Cree les tables avec `npm run db:push`.
-5. Insere les donnees initiales avec `npm run db:seed`.
-6. Demarre l'API et verifie `/health`.
-
-Pour l'activer :
-
-1. Initialiser Git si ce n'est pas encore fait :
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-```
-
-2. Creer un depot GitHub et pousser le projet :
-
-```bash
-git branch -M main
-git remote add origin <URL_DU_DEPOT_GITHUB>
-git push -u origin main
-```
-
-3. Aller dans l'onglet **Actions** du depot GitHub pour voir l'execution du pipeline.
-
-## CD - Deploiement automatique
-
-Le meme workflow contient aussi un job `deploy`.
-
-Le deploiement continu vers Docker Hub se lance uniquement si :
-
-- le push est fait sur la branche `main`
-- la CI est terminee avec succes
-- les secrets GitHub Docker Hub sont configures
-
-### Configuration des secrets Docker Hub
-
-Dans le depot GitHub :
-
-1. Aller dans **Settings**.
-2. Aller dans **Secrets and variables**.
-3. Cliquer sur **Actions**.
-4. Cliquer sur **New repository secret**.
-5. Ajouter :
+Le deploiement continu est dans `.github/workflows/deploy.yml`. Il utilise les secrets GitHub suivants :
 
 ```text
-Name: DOCKERHUB_USERNAME
-Value: votre nom d'utilisateur Docker Hub
+DOCKERHUB_USERNAME
+DOCKERHUB_TOKEN
+EC2_SSH_KEY
+FRONT_HOST
+BACK_PRIVATE_IP
+DB_PRIVATE_IP
+POSTGRES_PASSWORD
 ```
+
+Les images publiees sont :
 
 ```text
-Name: DOCKERHUB_TOKEN
-Value: un token Docker Hub
-```
-
-Pour creer le token Docker Hub :
-
-1. Aller sur Docker Hub.
-2. Aller dans **Account settings**.
-3. Aller dans **Personal access tokens**.
-4. Creer un token avec permission **Read & Write**.
-
-Ensuite, a chaque push sur `main`, GitHub Actions va :
-
-1. executer la CI
-2. verifier que l'API fonctionne
-3. construire l'image Docker
-4. pousser l'image sur Docker Hub
-
-L'image sera publiee avec deux tags :
-
-```text
-fatoumatbinetousylla/cargo_api:latest
-fatoumatbinetousylla/cargo_api:<sha-du-commit>
-```
-
-Pour lancer l'image localement :
-
-```bash
-docker run -p 3000:3000 \
-  -e DATABASE_URL="postgresql://postgres:postgres@host.docker.internal:5432/cargaison_db?schema=public" \
-  fatoumatbinetousylla/cargo_api:latest
+<DOCKERHUB_USERNAME>/medishop-back:latest
+<DOCKERHUB_USERNAME>/medishop-back:<sha-du-commit>
+<DOCKERHUB_USERNAME>/medishop-front:latest
+<DOCKERHUB_USERNAME>/medishop-front:<sha-du-commit>
 ```

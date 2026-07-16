@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MediShop Todo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="toolbar" aria-label="Todo controls">
+        <div>
+          <p class="eyebrow">MediShop</p>
+          <h1>Todo interne</h1>
+        </div>
+        <span class="status" id="status">Synchronisation</span>
+      </section>
+
+      <form class="composer" id="task-form">
+        <input id="task-title" name="title" type="text" autocomplete="off" placeholder="Nouvelle tache" required />
+        <button type="submit">Ajouter</button>
+      </form>
+
+      <section class="tasks" id="tasks" aria-live="polite"></section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

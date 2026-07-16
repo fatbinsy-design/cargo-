@@ -16,6 +16,7 @@ function withDates(item, fields) {
 }
 
 async function resetTables() {
+  await prisma.todo.deleteMany();
   await prisma.logConnexion.deleteMany();
   await prisma.session.deleteMany();
   await prisma.admin.deleteMany();
@@ -63,6 +64,14 @@ async function main() {
 
   await prisma.role.createMany({ data: db.roles });
 
+  await prisma.todo.createMany({
+    data: [
+      { title: 'Verifier les stocks pharmacie', completed: false },
+      { title: 'Preparer le rapport interne', completed: true },
+      { title: 'Valider le deploiement MediShop', completed: false },
+    ],
+  });
+
   await resetSequence('Cargaison');
   await resetSequence('Transporteur');
   await resetSequence('Ville');
@@ -72,6 +81,7 @@ async function main() {
   await resetSequence('Session');
   await resetSequence('LogConnexion');
   await resetSequence('Role');
+  await resetSequence('Todo');
 
   console.log('Seed termine avec succes.');
 }

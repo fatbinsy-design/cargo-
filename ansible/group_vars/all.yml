@@ -1,0 +1,15 @@
+---
+project_name: medishop-todo
+app_root: /opt/medishop
+
+backend_port: 3000
+frontend_host_port: 8080
+
+db_name: "{{ lookup('env', 'DB_NAME') | default('todo_db', true) }}"
+db_user: "{{ lookup('env', 'DB_USER') | default('postgres', true) }}"
+db_password: "{{ lookup('env', 'POSTGRES_PASSWORD') | default('change_me_with_github_secret', true) }}"
+db_port: 5432
+
+domain_name: "{{ lookup('env', 'DOMAIN_NAME') | default('_', true) }}"
+enable_https: "{{ lookup('env', 'ENABLE_HTTPS') | default('false', true) | bool }}"
+certbot_email: "{{ lookup('env', 'CERTBOT_EMAIL') | default('', true) }}"
